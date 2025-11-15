@@ -1,0 +1,10 @@
+{
+    "optimal_threshold": 0.9616794014283548,
+    "default_threshold": 0.5,
+    "test_f1_original": 0.946236559139785,
+    "test_f1_tuned": 0.5669099756690997,
+    "test_f1_smote": 0.9291736930860034,
+    "failure_recall_original": 0.179,
+    "failure_recall_tuned": 0.8955223880597015,
+    "failure_recall_smote": 0.208955223880597
+}

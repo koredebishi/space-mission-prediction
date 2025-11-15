@@ -1,0 +1,96 @@
+# Space Mission Success Prediction
+
+**Problem**: Class imbalance in binary classification (90/10 split) causes high aggregate metrics to mask poor minority class performance.
+
+**Solution**: Threshold optimization improved failure detection from 17.9% to 89.6% without retraining.
+
+## Key Results
+
+```
+Model: Gradient Boosting Classifier
+Dataset: 4,324 missions (1957-2020)
+Test F1: 0.9462
+ROC-AUC: 0.7627
+
+Original model: 98.3% success recall, 17.9% failure recall
+Threshold-tuned: 40.0% success recall, 89.6% failure recall
+```
+
+## Technical Contributions
+
+1. **Hierarchical imputation** for 78% missing price data - preserved org×decade context instead of naive mean
+2. **Historical success rate features** - most predictive (28% feature importance) but required careful leakage prevention
+3. **Threshold optimization analysis** - optimal decision boundary at p=0.962 (not 0.5), 4x improvement in minority class recall
+4. **Cost-benefit framework** - three deployment strategies for different false positive/negative trade-offs
+
+## Quick Start
+
+```bash
+pip install -r requirements.txt
+jupyter notebook classification_task.ipynb
+```
+
+## Reproducibility
+
+All experiments use fixed random_state=42:
+- Stratified 70/15/15 split maintains class balance
+- OneHotEncoder fit on training data only
+- Models/preprocessors saved in `models/`
+
+## Problem Statement
+
+Standard metrics (F1, accuracy) mislead under severe imbalance:
+
+```
+Confusion Matrix (Original Model):
+                Predicted
+                Fail  Success
+Actual Fail      12      55     ← 82% missed
+       Success   10     572
+```
+
+F1=0.9462 looks excellent but model learned to predict "success" for ambiguous cases, missing critical failures.
+
+## Approach
+
+### Data Engineering
+- 7 raw features → 150 engineered features
+- Conditional median imputation: org_decade → year → overall
+- Historical success rates with temporal awareness (no leakage)
+
+### Model Selection
+Compared Logistic Regression, Random Forest, Gradient Boosting - selected GB based on validation F1.
+
+### Imbalance Handling
+1. **Threshold tuning** (p=0.962): 89.6% failure recall, 349 false alarms
+2. **SMOTE resampling**: 20.9% failure recall, 31 false alarms
+3. **Original** (p=0.5): 17.9% failure recall, 10 false alarms
+
+## Deployment Strategy
+
+| Scenario | Model | Rationale |
+|----------|-------|-----------|
+| Crewed missions | Threshold (p=0.962) | Minimize missed failures |
+| Commercial satellites | Original (p=0.5) | Minimize false alarms |
+| Government contracts | SMOTE | Balanced trade-off |
+
+## Files
+
+```
+classification_task.ipynb    # Complete analysis
+evaluation.md               # Technical deep-dive
+models/                     # Serialized artifacts
+  ├── gradient_boosting_original.pkl
+  ├── gradient_boosting_smote.pkl
+  ├── feature_imputer.pkl
+  ├── categorical_encoder.pkl
+  └── model_config.json
+```
+
+## Key Insight
+
+Threshold optimization (1 line) outperformed algorithmic complexity (SMOTE retraining):
+- Threshold: 17.9% → 89.6% (+400%)
+- SMOTE: 17.9% → 20.9% (+17%)
+
+Always exhaust simple solutions before adding complexity.
