@@ -1,0 +1,6 @@
+# Tell GitHub to ignore HTML visualizations in language statistics
+visualizations/*.html linguist-vendored
+
+# Mark Python as the primary language
+*.py linguist-language=Python
+*.ipynb linguist-language=Python
